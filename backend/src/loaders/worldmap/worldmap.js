@@ -1,4 +1,8 @@
 import { writeJSON } from '../../utils/file.js';
+import { MEASURES } from '../../../../shared/enums';
+
+// Default lockdown status if data doesnt exist
+const defaultLockdownStatus = MEASURES.UNCLEAR;
 
 /**
  * Appends lockdown_status to each territory
@@ -8,11 +12,12 @@ export function appendLockdownStatus(lockdownStatusByTerritory) {
   const baseData = require('./base.json');
   const updatedFeatures = [];
   baseData['features'].forEach(feature => {
+    let lockdownStatus = lockdownStatusByTerritory[feature.properties.iso2]?.lockdown?.lockdown_status;
     updatedFeatures.push({
       ...feature,
       properties: {
         ...feature['properties'],
-        lockdown_status: lockdownStatusByTerritory[feature.properties.iso2]?.lockdown?.lockdown_status ?? ''
+        lockdown_status: lockdownStatus ?? defaultLockdownStatus,
       }
     });
   });
