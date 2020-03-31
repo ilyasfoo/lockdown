@@ -4,6 +4,7 @@ module.exports = {
     YES: 'yes',
     PARTIAL: 'partial',
     UNCLEAR: 'unclear',
+    UNSPECIFIED: 'unspecified',
   },
   TRAVEL: {
     PARTIAL: 'partial',
@@ -11,5 +12,6 @@ module.exports = {
     NA: 'n/a',
     PROHIBITED: 'prohibited',
     ALLOWED: 'allowed',
+    UNSPECIFIED: 'unspecified',
   }
 }
