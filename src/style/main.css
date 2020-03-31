@@ -2,7 +2,7 @@
   --ld-dark-gray: #2a2b2f;
   --ld-dark-blue: #0000ff;
   --ld-light-blue: #add8e6;
-  --ld-text: black;
+  --ld-text: rgb(48, 49, 54);
   --ld-bg: white;
   --ld-hover: rgb(247, 247, 247);
   --ld-active: blue;
@@ -56,6 +56,7 @@ body {
 }
 
 .ld-menu {
+  font-size: 14px;
   stroke-width: var(--ld-icon-stroke-width);
   background-color: var(--ld-bg);
   color: var(--ld-text);
@@ -152,8 +153,6 @@ body {
 }
 
 .ld-menu--notification {
-  /* we can toggle this to show whenever a service worker update is available */
-  display: none;
   width: 7px;
   height: 7px;
   background-color: #769de2;
@@ -161,6 +160,14 @@ body {
   top: 10px;
   right: 10px;
   border-radius: 50%;
+}
+
+.ld-sources li {
+  margin: 15px 0px 0px 0px;
+}
+
+.ld-link {
+  color: var(--ld-active);
 }
 
 @media (max-width: 960px) {
