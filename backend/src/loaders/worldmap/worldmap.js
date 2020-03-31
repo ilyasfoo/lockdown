@@ -1,8 +1,8 @@
 import { writeJSON } from '../../utils/file.js';
-import { MEASURES } from '../../../../shared/enums';
+import { MEASURE } from '../../../../shared/enums';
 
 // Default lockdown status if data doesnt exist
-const defaultLockdownStatus = MEASURES.UNCLEAR;
+const defaultLockdownStatus = MEASURE.UNSPECIFIED;
 
 /**
  * Appends lockdown_status to each territory

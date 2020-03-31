@@ -7,6 +7,7 @@ import { writeJSON } from '../../utils/file';
 import { getCachedCellsRange, getGridRanges } from '../../utils/sheet';
 import find from 'lodash/find';
 import { SimpleGridSheet, SimpleGrid } from '../../utils/SimpleGrid';
+import { toMeasureEnum, toTravelEnum } from '../../utils/enumHelper';
 
 // Constants
 const entryColumnLength = 5;
@@ -33,9 +34,9 @@ export async function getGlobalData() {
  * Parses entry structure with appended label,
  * strips null end and start
  * @param {array} rows 
- * @param {array} labels 
+ * @param {any} labelsWithTransformFn 
  */
-function parseEntryStructure(rows, labels) {
+function parseEntryStructure(rows, labelsWithTransformFn) {
   const associativeRows = transposeRows([
     'start',
     'end',
@@ -55,7 +56,23 @@ function parseEntryStructure(rows, labels) {
     associativeRowsStripped.push(o);
   });
 
-  const values = transposeColumns(labels, associativeRowsStripped);
+  // Parse all values with enum function
+  const associativeRowsStrippedParsed = associativeRowsStripped.map((row, index) => {
+    if (labelsWithTransformFn[index] === undefined) {
+      // No label given for this row, skip?
+      return row;
+    }
+
+    let transformFn = labelsWithTransformFn[index]?.transformFn;
+    let transformedValue = typeof transformFn == 'function' ? transformFn(row['value']) : row['value'];
+    return {
+      ...row,
+      value: transformedValue,
+    };
+  });
+
+  const labels = labelsWithTransformFn.map(l => l['label']);
+  const values = transposeColumns(labels, associativeRowsStrippedParsed);
   const array = []
   for (const [label, row] of Object.entries(values)) {
     array.push({
@@ -94,7 +111,7 @@ function getEntryCellRange(rowRange, entryIndex = 0, initialColumnLetter = 'H') 
 function getEntry(sheet, entryIndex) {
   let entryMetaRange = getEntryCellRange('2:6', entryIndex, 'I');
   let entryInfoRange = getEntryCellRange('9:12', entryIndex);
-  let entryMeasureRange = getEntryCellRange('14:60', entryIndex);
+  let entryMeasureRange = getEntryCellRange('14:24', entryIndex);
   let entryLandRange = getEntryCellRange('32:38', entryIndex);
   let entryFlightRange = getEntryCellRange('42:48', entryIndex);
   let entrySeaRange = getEntryCellRange('52:58', entryIndex);
@@ -114,48 +131,48 @@ function getEntry(sheet, entryIndex) {
 
   // Measures section
   const measures = parseEntryStructure(getCachedCellsRange(sheet, entryMeasureRange, false), [
-      'max_gathering', // Max gathering number allowed (PAX)?
-      'lockdown_status', // Is there a mandate for self-isolation?
-      'city_movement_restriction', // Is going on the street allowed?
-      'attending_religious_sites', // Is attenting religiouns sites allowed?
-      'going_to_work', // Is going to work allowed?
-      'military_not_deployed', // Is the Military NOT deployed?
-      'academia_allowed', // Is going to academia allowed?
-      'going_to_shops', // Is going to shops allowed?
-      'electricity_nominal', // Is Electricity operating nominally?
-      'water_nominal', // Is Water operating nominally?
-      'internet_nominal', // Is Internet operating nominally?
+    { label: 'max_gathering', transformFn: toMeasureEnum }, // Max gathering number allowed (PAX)?
+    { label: 'lockdown_status', transformFn: toMeasureEnum }, // Is there a mandate for self-isolation?
+    { label: 'city_movement_restriction', transformFn: toMeasureEnum }, // Is going on the street allowed?
+    { label: 'attending_religious_sites', transformFn: toMeasureEnum }, // Is attenting religiouns sites allowed?
+    { label: 'going_to_work', transformFn: toMeasureEnum }, // Is going to work allowed?
+    { label: 'military_not_deployed', transformFn: toMeasureEnum }, // Is the Military NOT deployed?
+    { label: 'academia_allowed', transformFn: toMeasureEnum }, // Is going to academia allowed?
+    { label: 'going_to_shops', transformFn: toMeasureEnum }, // Is going to shops allowed?
+    { label: 'electricity_nominal', transformFn: toMeasureEnum }, // Is Electricity operating nominally?
+    { label: 'water_nominal', transformFn: toMeasureEnum }, // Is Water operating nominally?
+    { label: 'internet_nominal', transformFn: toMeasureEnum }, // Is Internet operating nominally?
   ]);
 
   // In & out section
   const land = parseEntryStructure(getCachedCellsRange(sheet, entryLandRange, false), [
-    'local', // Local destinations?
-    'nationals_inbound', // Nationals inbound?
-    'nationals_outbound', // Nationals outbound?
-    'foreigners_inbound', // Foreigners inbound?
-    'foreigners_outbound', // Foreigners outbound?
-    'cross_border_workers', // Cross border workers?
-    'commerce', // Commerce?
+    { label: 'local', transformFn: toTravelEnum }, // Local destinations?
+    { label: 'nationals_inbound', transformFn: toTravelEnum }, // Nationals inbound?
+    { label: 'nationals_outbound', transformFn: toTravelEnum }, // Nationals outbound?
+    { label: 'foreigners_inbound', transformFn: toTravelEnum }, // Foreigners inbound?
+    { label: 'foreigners_outbound', transformFn: toTravelEnum }, // Foreigners outbound?
+    { label: 'cross_border_workers', transformFn: toTravelEnum }, // Cross border workers?
+    { label: 'commerce', transformFn: toTravelEnum }, // Commerce?
   ]);
 
   const flight = parseEntryStructure(getCachedCellsRange(sheet, entryFlightRange, false), [
-    'local', // Local destinations?
-    'nationals_inbound', // Nationals inbound?
-    'nationals_outbound', // Nationals outbound?
-    'foreigners_inbound', // Foreigners inbound?
-    'foreigners_outbound', // Foreigners outbound?
-    'stopovers', // Stopovers?
-    'commerce', // Commerce?
+    { label: 'local', transformFn: toTravelEnum }, // Local destinations?
+    { label: 'nationals_inbound', transformFn: toTravelEnum }, // Nationals inbound?
+    { label: 'nationals_outbound', transformFn: toTravelEnum }, // Nationals outbound?
+    { label: 'foreigners_inbound', transformFn: toTravelEnum }, // Foreigners inbound?
+    { label: 'foreigners_outbound', transformFn: toTravelEnum }, // Foreigners outbound?
+    { label: 'stopovers', transformFn: toTravelEnum }, // Stopovers?
+    { label: 'commerce', transformFn: toTravelEnum }, // Commerce?
   ]);
 
   const sea = parseEntryStructure(getCachedCellsRange(sheet, entrySeaRange, false), [
-    'local', // Local destinations?
-    'nationals_inbound', // Nationals inbound?
-    'nationals_outbound', // Nationals outbound?
-    'foreigners_inbound', // Foreigners inbound?
-    'foreigners_outbound', // Foreigners outbound?
-    'cross_border_workers', // Cross border workers?
-    'commerce', // Commerce?
+    { label: 'local', transformFn: toTravelEnum }, // Local destinations?
+    { label: 'nationals_inbound', transformFn: toTravelEnum }, // Nationals inbound?
+    { label: 'nationals_outbound', transformFn: toTravelEnum }, // Nationals outbound?
+    { label: 'foreigners_inbound', transformFn: toTravelEnum }, // Foreigners inbound?
+    { label: 'foreigners_outbound', transformFn: toTravelEnum }, // Foreigners outbound?
+    { label: 'cross_border_workers', transformFn: toTravelEnum }, // Cross border workers?
+    { label: 'commerce', transformFn: toTravelEnum }, // Commerce?
   ]);
   
   return {
