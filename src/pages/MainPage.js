@@ -151,19 +151,20 @@ export class MainPage extends Component {
       const localStorageDarkmode = localStorage.getItem('darkmode');
       const darkmodePreferenceExists = localStorageDarkmode !== null;
       const darkMode = localStorageDarkmode === 'true';
-      setFavIcon(preference);
       // on initial pageload, decide darkmode on users system preference
       if (!darkmodePreferenceExists) {
         if (preference) {
-          localStorage.setItem('darkmode', 'true');
           document.getElementsByTagName('html')[0].classList.add('dark');
+          setFavIcon(true);
         } else {
-          localStorage.setItem('darkmode', 'false');
+          document.getElementsByTagName('html')[0].classList.remove('dark');
+          setFavIcon(false);
         }
       } else {
         // on subsequent pageloads, decide darkmode on users chosen preference
         if (darkMode) {
           document.getElementsByTagName('html')[0].classList.add('dark');
+          setFavIcon(true);
         }
       }
     });
