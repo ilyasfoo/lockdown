@@ -1,5 +1,4 @@
 import { writeJSON } from '../../utils/file.js';
-import { MEASURE } from '../../../../shared/enums';
 
 // Default lockdown status if data doesnt exist
 const defaultLockdownStatus = null;
