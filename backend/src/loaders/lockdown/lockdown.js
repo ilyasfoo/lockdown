@@ -7,7 +7,8 @@ import { writeJSON } from '../../utils/file';
 import { getCachedCellsRange } from '../../utils/sheet';
 import find from 'lodash/find';
 import { SimpleGrid } from '../../utils/SimpleGrid';
-import { toMeasureType, toTravelType, toInteger } from '../../utils/typeHelper';
+import { toMeasureType, toTravelType, toInteger, isUpdateReady, toEntryDate, toCountryStatus } from '../../utils/typeHelper';
+import moment from 'moment-timezone';
 
 /**
  * Gets data from "Global" sheet.
@@ -76,15 +77,19 @@ function getEntry(sheet, entryIndex) {
   const entryMetaRows = getCachedCellsRange(sheet, getEntryCellRange('3:9', entryIndex), false);
   const entryMetaData = transposeColumns(['editor', 'reviewed_by', 'status', 'type', 'date_of_entry', 'additional_info_1', 'additional_info_2'], entryMetaRows, true);
 
-  // TODO: Need to check this condition if still holds for snapshot later
+  // TODO: Enable following when snapshot sheets are ready
   // Should skip status != 'Ready'
-  // if (entryMetaData['status'] != 'Ready') {
+  // if (!isUpdateReady(entryMetaData['status'])) {
   //   return;
   // }
 
+  // Entry date
+  const entryDateRows = getCachedCellsRange(sheet, getEntryCellRange('1:1', entryIndex), false);
+  const entryDateData = { entry_date: toEntryDate(entryDateRows[0]) };
+  
   // Entry entry section
   const entryInfoRows = getCachedCellsRange(sheet, getEntryCellRange('16:16', entryIndex), false);
-  const entryInfoData = transposeColumns(['title_of_status'], entryInfoRows, true);
+  const entryInfoData = { title_of_status: toCountryStatus(entryInfoRows[0]) };
 
   // Measures section
   const entryMeasureRange = getEntryCellRange('19:29', entryIndex);
@@ -135,10 +140,13 @@ function getEntry(sheet, entryIndex) {
     { label: 'cross_border_workers', transformFn: toTravelType }, // Cross border workers?
     { label: 'commerce', transformFn: toTravelType }, // Commerce?
   ]);
+
+  // TODO: Implement optional & required validation here.
   
   return {
     ...entryMetaData,
     ...entryInfoData,
+    ...entryDateData,
     measures: measures,
     travel: {
       land,
@@ -154,10 +162,12 @@ function getEntry(sheet, entryIndex) {
  */
 export async function batchGetTerritoriesEntryData(territories) {
   const batchSize = 25;
-  const entriesToGrab = 10;
-  const endCacheColumn = columnToLetter(letterToColumn('D') + (entriesToGrab));
-  const rangeToCache = `D1:${endCacheColumn}65`;
   const doc = await getDocument();
+  // TODO: Figure out how to find total columns should take
+  const entriesToGrab = 1000;
+  const startColumnIndex = letterToColumn('D');
+  const endCacheColumn = columnToLetter(startColumnIndex + entriesToGrab);
+  const rangeToCache = `D1:${endCacheColumn}65`;
   const result = [];
   var batch;
   
@@ -178,7 +188,8 @@ export async function batchGetTerritoriesEntryData(territories) {
 
       let gridSheet = new SimpleGrid(rangeToCache, gridData[i], rowCount, columnCount);
       let entries = [];
-      for (let entryIndex = 0; entryIndex < entriesToGrab; entryIndex++) {
+      let entryColumnsCount = columnCount - startColumnIndex;
+      for (let entryIndex = 0; entryIndex < entryColumnsCount; entryIndex++) {
         // Cell ranges
         let entryData = getEntry(gridSheet, entryIndex);
         if (entryData) {
@@ -186,11 +197,16 @@ export async function batchGetTerritoriesEntryData(territories) {
         }
       }
 
+      // Compares current date in the same format with entry to get latest
+      let currentDate = moment().tz('UTC').format('D MMMM Y');
+      let currentEntry = find(entries, { entry_date: currentDate });
+
       result.push({
         isoCode: batch[i]['iso2'],
         lockdown: {
           // TODO: change this to support multiple entries after MVP
-          ...entries[0]
+          // entries
+          ...currentEntry
         }
       });
     }
