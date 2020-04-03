@@ -56,7 +56,7 @@ function parseEntryStructure(rows, labelsWithTransformFn) {
     associativeRowsStripped.push(o);
   });
 
-  // Parse all values with enum function
+  // Parse all values with transform function
   const associativeRowsStrippedParsed = associativeRowsStripped.map((row, index) => {
     if (labelsWithTransformFn[index] === undefined) {
       // No label given for this row, skip?
