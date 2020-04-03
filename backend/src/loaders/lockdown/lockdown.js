@@ -4,9 +4,9 @@ import { transposeRows, transposeColumns } from '../../utils/dataHelper';
 import { letterToColumn, columnToLetter } from 'google-spreadsheet/lib/utils';
 import logger from '../../utils/logger';
 import { writeJSON } from '../../utils/file';
-import { getCachedCellsRange, getGridRanges } from '../../utils/sheet';
+import { getCachedCellsRange } from '../../utils/sheet';
 import find from 'lodash/find';
-import { SimpleGridSheet, SimpleGrid } from '../../utils/SimpleGrid';
+import { SimpleGrid } from '../../utils/SimpleGrid';
 import { toMeasureType, toTravelType, toInteger } from '../../utils/typeHelper';
 
 /**
@@ -29,7 +29,7 @@ export async function getGlobalData() {
 
 /**
  * Parses entry structure with appended label,
- * strips null end and start
+ * transforms values
  * @param {array} rows 
  * @param {any} labelsWithTransformFn 
  */
