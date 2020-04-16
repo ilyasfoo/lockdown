@@ -43,13 +43,11 @@ export async function batchGetTerritoriesEntryData(territories) {
   
   while (batch = territories.splice(0, BATCH_SIZE)) {
     if (batch.length < 1) break;
-    // TODO: Uncomment the following when country tab sheets are ready with ISO3 naming
     let gridRanges = batch.map(territory => `${territory['iso3']}!${rangeToCache}`);
     logger.log(`[Lockdown:WorkSheet] ${batch.map(t => t['iso3']).join(' ')}`);
     let gridData = await doc.batchGetGridRanges(gridRanges);
     
     for (let i = 0; i < batch.length; i++) {
-      // TODO: Uncomment the following when country tab sheets are ready with ISO3 naming
       let workSheet = await getWorksheetByTitle(`${batch[i]['iso3']}`);
       let rowCount = workSheet['gridProperties']['rowCount'];
       let columnCount = workSheet['gridProperties']['columnCount'];
@@ -69,19 +67,14 @@ export async function batchGetTerritoriesEntryData(territories) {
 
       // TODO: change this to support multiple entries after MVP 
       // Compares current date in the same format with entry to get latest
-      let currentDate = moment();
-      let currentDatePlusOne = moment().add(1, 'days');
+      let currentDate = moment().subtract(2, 'weeks');
+      let currentDatePlusOne = moment().add(8, 'weeks');
       let snapshots = getSnapshots(entries, currentDate, currentDatePlusOne);
-      let currentSnapshot = snapshots[0];
-
+      // let currentSnapshot = snapshots[0];
 
       result.push({
         isoCode: batch[i]['iso2'],
-        lockdown: {
-          // TODO: change this to support multiple entries after MVP
-          ...currentSnapshot
-          // ...currentEntry
-        }
+        lockdown: snapshots
       });
     }
   }
@@ -111,11 +104,13 @@ export default async function loadData() {
   // Load summarized datafile
   const summarizedTerritories = {};
   territories.forEach((territory) => {
-    let measures = territory['lockdown']['measures'];
-    let lockdownStatus = find(measures, { 'label': 'lockdown_status' });
+    let lockdownStatuses = territory['lockdown'].map(snapshot => {
+      return find(snapshot['measures'], { 'label': 'lockdown_status' }).value;
+    });
+
     summarizedTerritories[territory['isoCode']] = {
       lockdown: {
-        lockdown_status: lockdownStatus['value'],
+        lockdown_status: lockdownStatuses,
       }
     };
   });
